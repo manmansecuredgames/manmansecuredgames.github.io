@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blooket</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Titan+One&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Nunito", Arial, sans-serif;
+      user-select: none;
+    }
+
+    body {
+      min-height: 100vh;
+      background-color: #00bcd4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #particle-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    header {
+      width: 100%;
+      height: 50px;
+      background-color: #9c27b0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      color: white;
+      font-weight: bold;
+      z-index: 10;
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
+    }
+
+    .top-logo {
+      font-family: "Titan One", cursive;
+      font-size: 26px;
+      letter-spacing: 1px;
+    }
+
+    .top-title {
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .top-login {
+      font-size: 16px;
+      text-decoration: underline;
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .logo {
+      font-family: "Titan One", cursive;
+      font-size: 90px;
+      color: white;
+      margin-bottom: 25px;
+      text-shadow: 0 6px 0 rgba(0, 0, 0, 0.2);
+      letter-spacing: 2px;
+      -webkit-text-stroke: 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    input {
+      width: 250px;
+      height: 60px;
+      padding: 10px 15px;
+      border: 3.5px solid #e5e5e5;
+      border-radius: 12px;
+      font-size: 22px;
+      font-weight: 900;
+      color: #333;
+      outline: none;
+      box-shadow: 0 5px 0 rgba(0, 0, 0, 0.15);
+      text-align: center;
+    }
+
+    input::placeholder {
+      color: #bbb;
+    }
+
+    button {
+      height: 60px;
+      width: 60px;
+      border: 3.5px solid #e5e5e5;
+      border-radius: 12px;
+      background: white;
+      color: #555;
+      font-size: 26px;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 5px 0 rgba(0, 0, 0, 0.15);
+      transition: transform 0.1s;
+    }
+
+    button:hover {
+      background: #f9f9f9;
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      transform: translateY(2px);
+      box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
+    }
+
+    #error {
+      color: #ffffff;
+      background-color: #e53935;
+      padding: 10px 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+      display: none;
+      font-weight: 900;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="particle-canvas"></canvas>
+
+  <header>
+    <div class="top-logo">Blooket</div>
+    <div class="top-title">Join a Game</div>
+    <div class="top-login">Login</div>
+  </header>
+
+  <div class="main-wrapper">
+    <div class="logo">Blooket</div>
+
+    <div class="form-container">
+      <input
+        id="learningCode"
+        type="text"
+        placeholder="Game ID"
+        maxlength="20"
+        autocomplete="off"
+      >
+
+      <button onclick="startLearning()">&#10140;</button>
+    </div>
+
+    <div id="error">Invalid learning code.</div>
+  </div>
+
+  <script>
+    // ==========================================
+    // INTERACTIVE PARTICLES ENGINE
+    // ==========================================
+    const canvas = document.getElementById("particle-canvas");
+    const ctx = canvas.getContext("2d");
+
+    let width, height;
+    let particles = [];
+    const mouse = { x: null, y: null, radius: 120 };
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    window.addEventListener("mousemove", (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+
+    window.addEventListener("mouseleave", () => {
+      mouse.x = null;
+      mouse.y = null;
+    });
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.size = Math.random() * 25 + 10;
+        this.baseX = this.x;
+        this.baseY = this.y;
+        this.vx = (Math.random() - 0.5) * 0.8;
+        this.vy = (Math.random() - 0.5) * 0.8;
+        this.opacity = Math.random() * 0.25 + 0.1;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.vRot = (Math.random() - 0.5) * 0.02;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+        ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+        ctx.restore();
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.rotation += this.vRot;
+
+        if (this.x < -40) this.x = width + 40;
+        if (this.x > width + 40) this.x = -40;
+        if (this.y < -40) this.y = height + 40;
+        if (this.y > height + 40) this.y = -40;
+
+        if (mouse.x !== null && mouse.y !== null) {
+          let dx = mouse.x - this.x;
+          let dy = mouse.y - this.y;
+          let distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < mouse.radius) {
+            let force = (mouse.radius - distance) / mouse.radius;
+            let angle = Math.atan2(dy, dx);
+            this.x -= Math.cos(angle) * force * 5;
+            this.y -= Math.sin(angle) * force * 5;
+          }
+        }
+      }
+    }
+
+    function initParticles() {
+      particles = [];
+      const particleCount = Math.floor((width * height) / 10000);
+      for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle());
+      }
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, width, height);
+      particles.forEach((p) => {
+        p.update();
+        p.draw();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+
+    initParticles();
+    animateParticles();
+
+    // ==========================================
+    // LEARNING CODE
+    // ==========================================
+    const validCodes = {
+      "1": "https://yoowsp.vercel.app/",
+      "2": "https://2496a36b-921d-4487-9052-afd9cacc4624-00-1gb00sud7ktf7.worf.replit.dev/"
+    };
+
+    function startLearning() {
+      const input = document
+        .getElementById("learningCode")
+        .value
+        .trim()
+        .toUpperCase();
+
+      const error = document.getElementById("error");
+
+      if (input in validCodes) {
+        const destination = validCodes[input];
+        const blank = window.open("about:blank", "_blank");
+
+        if (!blank) {
+          error.textContent = "Please allow pop-ups to continue learning.";
+          error.style.display = "block";
+          return;
+        }
+
+        blank.document.open();
+        blank.document.write(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learning</title>
+<style>
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+</style>
+</head>
+<body>
+<iframe src="${destination}" allowfullscreen></iframe>
+</body>
+</html>
+`);
+        blank.document.close();
+      } else {
+        error.textContent = "Invalid learning code.";
+        error.style.display = "block";
+      }
+    }
+
+    document
+      .getElementById("learningCode")
+      .addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+          startLearning();
+        }
+      });
+  </script>
+</body>
+</html>
